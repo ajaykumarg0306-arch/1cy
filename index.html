@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TruthGuard AI – Think Before You Trust</title>
+<style>
+:root{--bg:#0a1730;--card:#112447;--line:#24407a;--tx:#e8eefc;--mut:#9fb2d9;--blue:#4c8dff;--red:#ff6b6b;--grn:#4fd18b;--amb:#ffc14d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,Segoe UI,sans-serif}
+header{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--line)}
+header b{font-size:20px;margin-right:auto}nav button{background:none;border:0;color:var(--mut);font:inherit;padding:6px 10px;cursor:pointer;border-radius:6px}
+nav button[aria-current=true]{color:#fff;background:var(--card)}
+main{max-width:860px;margin:0 auto;padding:24px 18px 60px}
+h1{font-size:clamp(30px,6vw,46px);line-height:1.1;margin:.3em 0}h2{margin:1.2em 0 .4em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin:14px 0}
+.btn{background:var(--blue);color:#06122b;border:0;border-radius:8px;padding:10px 16px;font:600 16px inherit;cursor:pointer}
+.btn.alt{background:none;color:var(--tx);border:1px solid var(--line)}.btn:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--amb);outline-offset:2px}
+textarea,input[type=text]{width:100%;background:#0a1730;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.mut{color:var(--mut);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.res{border-left:8px solid var(--amb)}.res.scam{border-color:var(--red)}.res.ok{border-color:var(--grn)}
+.badge{display:inline-block;border:1px solid currentColor;border-radius:99px;padding:2px 10px;font-size:14px}
+.alert{background:#3a1420;border:2px solid var(--red);border-radius:10px;padding:12px;margin:12px 0}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;cursor:pointer}
+.drop img{max-width:100%;max-height:220px;margin-top:8px;border-radius:6px}
+.bar{height:14px;background:#0a1730;border-radius:99px;overflow:hidden;border:1px solid var(--line)}.bar i{display:block;height:100%}
+.hide{display:none}li{margin:3px 0}.big{font-size:44px;font-weight:700}
+footer{text-align:center;color:var(--mut);font-size:13px;padding:20px}
+
+#shell{display:flex;min-height:100vh}#side{width:230px;flex:none;background:#0d1d3d;border-right:1px solid var(--line);padding:14px 10px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;overflow:auto}
+#side b{padding:6px 10px 2px;font-size:19px}#side .mut{padding:0 10px 8px}#side button{background:none;border:0;color:var(--mut);font:inherit;text-align:left;padding:9px 10px;border-radius:8px;cursor:pointer}
+#side button:hover{background:#16305f}#side button[aria-current=true]{color:#fff;background:var(--card);box-shadow:inset 3px 0 var(--blue)}#side button:focus-visible{outline:3px solid var(--amb)}
+#app{flex:1;min-width:0;max-width:1000px;margin:0 auto;padding:24px 18px 60px}
+@media(max-width:760px){#shell{flex-direction:column}#side{width:auto;height:auto;position:static;flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line)}#side b,#side .mut{width:100%}}
+label{display:block;margin:12px 0 4px;font-weight:600}label.inl{display:inline-flex;gap:8px;align-items:center;font-weight:400;margin:0}
+input:not([type=checkbox]):not([type=file]),select{width:100%;background:#0a1730;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit}input:focus-visible,select:focus-visible{outline:3px solid var(--amb);outline-offset:2px}
+.auth{max-width:440px;margin:5vh auto}.err{color:#ff9a9a;font-size:14px;min-height:20px;margin:8px 0}.row.nw{flex-wrap:nowrap}.row.nw .btn{flex:none}
+#sb{height:100%;transition:width .2s}.plain{list-style:none;padding:0;color:var(--mut);font-size:14px}.btn:disabled{opacity:.6;cursor:not-allowed}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--line);font-size:14px;white-space:nowrap}
+.pill{border:1px solid currentColor;border-radius:99px;padding:2px 10px;font-size:13px}.pill.scam{color:var(--red)}.pill.ok{color:var(--grn)}.pill.nsure{color:var(--amb)}
+.toast{position:fixed;right:16px;bottom:16px;background:var(--card);border:1px solid var(--grn);padding:12px 16px;border-radius:8px;z-index:9;max-width:90vw}.toast.bad{border-color:var(--red)}
+</style></head><body>
+<div id="shell"><aside id="side" aria-label="Main navigation"></aside><main id="app"></main></div>
+<footer>TruthGuard AI is a baseline demo. It can be wrong. Always verify through official apps or websites.</footer>
+<script>
+/* ===== Settings (change these) ===== */
+const CFG={minChars:15,scamRisk:60,alertAt:6,labels:[[30,"High concern"],[50,"Suspicious"],[70,"Uncertain"],[90,"Lower apparent risk"],[101,"Stronger evidence of legitimacy"]]};
+const SIGNALS={urgency:[20,/urgent|immediately|within \d+ ?(hours|hrs)|blocked|suspended|last warning|expires/],
+credential:[30,/\botp\b|\bpin\b|password|cvv|card number|enter your (details|account)/],
+money:[20,/you have won|lottery|prize|refund|cashback|processing fee/],
+link:[20,/https?:\/\/|bit\.ly|tinyurl|\bwww\.|\b\d{1,3}(\.\d{1,3}){3}\b/]};
+const WHY={urgency:"Pressure or urgent threat",credential:"Asks for OTP, PIN, password or card details",money:"Promises money, prizes or refunds",link:"Contains a link you shouldn't trust blindly"};
+const CATS={"Banking and KYC scams":/kyc|bank account|account (will be )?(blocked|suspended)/,"UPI and payment scams":/\bupi\b|collect request|paytm|phonepe|gpay/,
+"OTP and credential theft":/\botp\b|share (the )?code/,"Phishing links":/bit\.ly|tinyurl|https?:\/\/\S*(login|verify|secure)/,"Lottery and prize scams":/lottery|you have won|prize/,
+"Fake job offers":/work from home|part[- ]time job|earn \S+ per day/,"Delivery and courier scams":/courier|parcel|delivery (failed|attempt)|package/,
+"Utility disconnection scams":/electricity|power (will be )?disconnect|bill unpaid/,"Tax-refund / government scams":/income tax|tax refund|subsidy/,
+"Investment scams":/guaranteed returns?|trading tips|double your money/,"Malicious APK scams":/\.apk\b|install (this )?app/};
+const label=s=>CFG.labels.find(l=>s<l[0])[1];
+/* Baseline analyzer: never returns LIKELY_GENUINE (it is untrained). */
+function analyze(text){
+ const t=(text||"").trim().toLowerCase();
+ if(t.length<CFG.minChars)return{cls:"NOT_SURE",cat:"Unknown / Insufficient Evidence",risk:50,trust:50,warn:[],urls:[],why:"Not enough readable text to judge."};
+ const hits=Object.keys(SIGNALS).filter(k=>SIGNALS[k][1].test(t));
+ const risk=Math.min(100,hits.reduce((a,k)=>a+SIGNALS[k][0],0));
+ const cats=Object.keys(CATS).filter(c=>CATS[c].test(t));
+ const urls=(t.match(/(https?:\/\/|www\.)\S+|\b\S+\.(com|in|xyz|top|apk)\S*/g)||[]).map(u=>({u,short:/bit\.ly|tinyurl|t\.co|cutt\.ly/.test(u),ip:/\d+\.\d+\.\d+\.\d+/.test(u)}));
+ const trust=100-risk,warn=hits.map(k=>WHY[k]);
+ if(risk>=CFG.scamRisk&&hits.length>=2&&cats.length)return{cls:"LIKELY_SCAM",cat:cats[0],risk,trust,warn,urls,why:"Several independent warning signs were found together."};
+ return{cls:"NOT_SURE",cat:"Unknown / Insufficient Evidence",risk,trust:hits.length?trust:50,warn,urls,why:"Not Sure — we could not reliably tell if this is genuine or fraudulent. No warning signs does NOT prove a message is genuine."};}
+/* ===== App v2: accounts + dashboard (talks to server.py) ===== */
+const $=s=>document.querySelector(s),app=$("#app"),side=$("#side");
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const redact=s=>s.replace(/\b\d{4,}\b/g,m=>"•".repeat(m.length));
+const normPhone=s=>{const d=(s||"").replace(/\D/g,"");return d.length>=10?d.slice(-10):null};
+const badge=c=>c==="LIKELY_SCAM"?"🚫 Likely Scam":c==="LIKELY_GENUINE"?"✅ Likely Genuine":"❓ Not Sure";
+const CLS={LIKELY_SCAM:"scam",LIKELY_GENUINE:"ok",NOT_SURE:"nsure"};
+const ALERT=`<div class="alert" role="alert">🚨 <b>Community Alert:</b> Reported by 6+ users. Exercise caution and verify independently.</div>`;
+const PUB=["home","login","register","forgot","about"];
+const NAV=[["dashboard","Dashboard"],["check","Analyze Message"],["shot","Upload Screenshot"],["history","Analysis History"],["community","Community Scam Reports"],["saved","Saved Reports"],["profile","Profile"],["settings","Settings"]];
+let U=null,CUR=0,PAGE=1,IMG=null,MODE="",ocrP;
+function toast(m,bad){const t=document.createElement("div");t.className="toast"+(bad?" bad":"");t.setAttribute("role","status");t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3500)}
+async function api(m,u,b){const r=await fetch("/api"+u,{method:m,headers:{"Content-Type":"application/json"},credentials:"same-origin",body:b?JSON.stringify(b):undefined});
+ let d={};try{d=await r.json()}catch{}
+ if(r.status===401&&U&&u!=="/login"){U=null;toast("Your session expired. Please log in again.",1);go("login")}
+ if(!r.ok)throw new Error(d.error||"Something went wrong. Try again.");return d}
+const sideHtml=p=>U?`<b>🛡️ TruthGuard AI</b><span class="mut">${esc(U.name)}</span>${NAV.map(([k,t])=>`<button data-p="${k}" ${k===(p==="result"?"history":p)?'aria-current="true"':""}>${t}</button>`).join("")}<button data-p="logout">Logout</button>`
+ :`<b>🛡️ TruthGuard AI</b>${[["home","Home"],["login","Log in"],["register","Create account"],["about","Limits"]].map(([k,t])=>`<button data-p="${k}" ${k===p?'aria-current="true"':""}>${t}</button>`).join("")}`;
+side.onclick=e=>{const b=e.target.closest("button");if(b)b.dataset.p==="logout"?logout():go(b.dataset.p)};
+async function logout(){try{await api("POST","/logout")}catch{}U=null;toast("You have been logged out.");go("login")}
+async function go(p,push=true,arg=0){
+ if(p==="shot"){MODE="shot";p="check"}
+ if(!U&&!PUB.includes(p))p="login";
+ if(U&&(p==="login"||p==="register"||p==="home"))p="dashboard";
+ if(!P[p])p=U?"dashboard":"home";
+ CUR=arg;if(push)window.history.pushState(0,"","/"+(p==="home"?"":p)+(arg?"/"+arg:""));
+ side.innerHTML=sideHtml(p);app.innerHTML='<p class="mut" aria-live="polite">Loading…</p>';
+ try{app.innerHTML=await P[p]();W[p]&&W[p]()}catch(e){app.innerHTML=`<div class="alert" role="alert">${esc(e.message)}</div>`}
+ window.scrollTo(0,0)}
+const dt=s=>new Date(s*1000).toLocaleString();
+const pill=c=>`<span class="pill ${CLS[c]}">${badge(c)}</span>`;
+const tbl=rows=>rows.length?`<div class="tw"><table><thead><tr><th>Date and time</th><th>Message type</th><th>Scam category</th><th>Trust score</th><th>Classification</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td>${dt(r.at)}</td><td>${esc(r.kind)}</td><td>${esc(r.cat)}</td><td>${r.trust}/100</td><td>${pill(r.cls)}</td><td><button class="btn alt" onclick="go('result',true,${+r.id})">View details</button></td></tr>`).join("")}</tbody></table></div>`
+ :`<div class="card">No analyses yet. <a href="/check" onclick="go('check');return false" style="color:var(--blue)">Analyze your first message</a>.</div>`;
+const donut=a=>{const T=a.reduce((s,x)=>s+x[1],0);if(!T)return'<p class="mut">No data yet.</p>';let o=0;const C=2*Math.PI*40;
+ return`<svg viewBox="0 0 120 120" width="150" role="img" aria-label="Analysis outcomes">${a.map(([n,v,col])=>{const l=v/T*C,s=`<circle cx="60" cy="60" r="40" fill="none" stroke="${col}" stroke-width="18" stroke-dasharray="${l} ${C-l}" stroke-dashoffset="${-o}" transform="rotate(-90 60 60)"/>`;o+=l;return s}).join("")}<text x="60" y="66" text-anchor="middle" fill="#fff" font-size="20">${T}</text></svg><ul class="plain">${a.map(([n,v,col])=>`<li><span style="color:${col}">●</span> ${n}: ${v}</li>`).join("")}</ul>`};
+const line=a=>{const mx=Math.max(1,...a.map(x=>x.n)),w=300,h=90;return`<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Analyses per day, last 14 days"><polyline points="${a.map((x,i)=>`${i*w/(a.length-1)},${h-x.n/mx*(h-10)-4}`).join(" ")}" fill="none" stroke="var(--blue)" stroke-width="2.5"/></svg><p class="mut">Last 14 days (UTC) · busiest day: ${mx}</p>`};
+const resultHtml=(r,cm)=>{const c=CLS[r.cls],col=c==="scam"?"var(--red)":c==="ok"?"var(--grn)":"var(--amb)";
+ return`<div class="card res ${c==="nsure"?"":c}" role="status"><h2 style="margin:0">${badge(r.cls)}</h2><p><span class="badge">${esc(r.cat)}</span></p>
+ <div class="big" style="color:${col}">${r.trust}<span class="mut" style="font-size:18px">/100 · ${label(r.trust)}</span></div><div class="bar" aria-hidden="true"><i style="width:${r.trust}%;background:${col}"></i></div>
+ <p>${esc(r.why)}</p>${(r.warn||[]).length?`<b>Warning signs</b><ul>${r.warn.map(w=>`<li>⚠️ ${esc(w)}</li>`).join("")}</ul>`:""}
+ ${(r.urls||[]).length?`<b>Links found (not opened, not reputation-checked)</b><ul>${r.urls.map(u=>`<li>${esc(u.u)}${u.short?" – link shortener hides the real address":""}${u.ip?" – uses a raw IP address":""}</li>`).join("")}</ul>`:""}
+ <b>What to do</b><ul><li>Don't click links or share OTPs, PINs or passwords.</li><li>Contact the company using its official app, website or number.</li><li>Not sure? Ask someone you trust.</li></ul>
+ <p class="mut">Trust score is not a probability or proof.</p>${cm?'<h3>Community</h3><div id="cm"></div>':""}</div>`};
+async function commBox(sender,cat){const el=$("#cm");if(!sender){el.innerHTML="<p>Enter a 10-digit sender phone number to see or add community reports.</p>";return}
+ const c=await api("GET","/community?sender="+sender);
+ el.innerHTML=(c.alert?ALERT:"")+`<p>Eligible reports for this sender: <b>${c.count}</b> (distinct users only). Reports never prove someone is a scammer.</p><div class="row">${c.mine?'<button class="btn alt" id="wd">Withdraw my report</button>':'<button class="btn alt" id="rep">Report this sender</button>'}</div>`;
+ const re=()=>commBox(sender,cat).catch(e=>toast(e.message,1)),act=(id,fn)=>$(id)&&($(id).onclick=async()=>{try{await fn();re()}catch(e){toast(e.message,1)}});
+ act("#rep",async()=>{await api("POST","/reports",{sender,cat});toast("Report submitted.")});act("#wd",async()=>{await api("DELETE","/reports?sender="+sender);toast("Report withdrawn.")})}
+const pwField=(id,l,ac)=>`<label for="${id}">${l}</label><div class="row nw"><input id="${id}" type="password" autocomplete="${ac}"><button type="button" class="btn alt sh" data-t="${id}">Show</button></div>`;
+const wireSh=()=>document.querySelectorAll(".sh").forEach(b=>b.onclick=()=>{const i=$("#"+b.dataset.t),h=i.type==="password";i.type=h?"text":"password";b.textContent=h?"Hide":"Show"});
+const strength=p=>{let s=0;if(p.length>=8)s++;if(p.length>=12)s++;if(/[a-z]/.test(p)&&/[A-Z]/.test(p))s++;if(/\d/.test(p))s++;if(/[^\w\s]/.test(p))s++;return Math.min(4,s)};
+const pwBad=p=>p.length<8||p.length>128||!/[A-Za-z]/.test(p)||!/\d/.test(p)?"Password must be 8+ characters with a letter and a number.":"";
+const EM=/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
+async function submit(btn,txt,fn){btn.disabled=true;btn.textContent=txt;try{await fn()}catch(e){const x=$("#e");x?x.textContent=e.message:toast(e.message,1)}finally{btn.disabled=false;btn.textContent=btn.dataset.l}}
+const P={
+home:()=>`<h1>Is That Message Really Safe?</h1><p class="mut">Think Before You Trust. Paste an SMS or WhatsApp message, or upload a screenshot, and get warning signs, a possible scam type and clear next steps.</p>
+<div class="row"><button class="btn" onclick="go('register')">Create a free account</button><button class="btn alt" onclick="go('login')">Log in</button></div>
+<h2>How it works</h2><div class="grid"><div class="card"><b>1. Add the message</b><br><span class="mut">Paste text or upload a PNG/JPG screenshot. Text is read on your device.</span></div><div class="card"><b>2. We look for warning signs</b><br><span class="mut">Urgency, requests for OTP or card details, prize bait, risky links.</span></div><div class="card"><b>3. Honest result</b><br><span class="mut">Likely Scam, or Not Sure. We never call a message verified genuine.</span></div></div>
+<h2>Scam types we look for</h2><p class="mut">${Object.keys(CATS).join(" · ")}</p>`,
+login:()=>`<div class="auth card"><h2 style="margin:0">🛡️ TruthGuard AI</h2><h1 style="font-size:32px">Welcome Back</h1><p class="mut">Your digital safety starts here.</p>
+<form id="f" novalidate><label for="em">Email</label><input id="em" type="email" autocomplete="email">${pwField("pw","Password","current-password")}
+<div class="row" style="justify-content:space-between;margin-top:10px"><label class="inl"><input type="checkbox" id="rm"> Remember me</label><a href="/forgot" onclick="go('forgot');return false" style="color:var(--blue)">Forgot password?</a></div>
+<p class="err" id="e" role="alert"></p><button class="btn" id="sub" data-l="Log in" style="width:100%">Log in</button></form>
+<p class="mut">New here? <a href="/register" onclick="go('register');return false" style="color:var(--blue)">Create an account</a></p></div>`,
+register:()=>`<div class="auth card"><h2 style="margin:0">🛡️ TruthGuard AI</h2><h1 style="font-size:32px">Create your account</h1><p class="mut">Check suspicious messages before you trust them.</p>
+<form id="f" novalidate><label for="nm">Full name</label><input id="nm" type="text" autocomplete="name"><label for="em">Email address</label><input id="em" type="email" autocomplete="email">
+${pwField("pw","Password","new-password")}<div class="bar" aria-hidden="true"><i id="sb" style="width:0"></i></div><p class="mut" id="sl" aria-live="polite">Use 8+ characters with a letter and a number.</p>${pwField("pw2","Confirm password","new-password")}
+<label class="inl"><input type="checkbox" id="tc"> I accept the Terms and Privacy Policy</label><p class="err" id="e" role="alert"></p><button class="btn" id="sub" data-l="Create account" style="width:100%">Create account</button></form>
+<p class="mut">Already registered? <a href="/login" onclick="go('login');return false" style="color:var(--blue)">Log in</a></p></div>`,
+forgot:()=>`<div class="auth card"><h1 style="font-size:28px">Forgot password</h1><p>Password reset by email isn't enabled because no email service is configured. If you can still log in, change your password under Profile.</p><button class="btn alt" onclick="go('login')">Back to log in</button></div>`,
+dashboard:async()=>{const d=await api("GET","/dashboard"),st=[["Messages analyzed",d.total],["Likely scams",d.scam],["Likely genuine",d.genuine],["Not sure",d.notsure],["Community reports submitted",d.reports]];
+ return`<h1 style="font-size:32px">Welcome back, ${esc(U.name)}!</h1><p class="mut">Stay alert. Stay protected. Check suspicious messages before you trust them.</p><button class="btn" onclick="go('check')">Analyze a Message</button>
+ ${d.total?"":`<div class="card">Nothing here yet. Analyze your first message and your numbers will appear.</div>`}
+ <div class="grid" style="margin-top:14px">${st.map(([l,n])=>`<div class="card"><div class="big">${n}</div>${l}</div>`).join("")}</div>
+ <h2>Quick actions</h2><div class="row"><button class="btn alt" onclick="go('shot')">Upload a screenshot</button><button class="btn alt" onclick="go('check')">Paste message text</button><button class="btn alt" onclick="MODE='link';go('check')">Check a suspicious link</button><button class="btn alt" onclick="go('history')">View analysis history</button><button class="btn alt" onclick="go('community')">Report a scam</button></div>
+ <div class="grid" style="margin-top:14px"><div class="card"><b>Outcomes</b>${donut([["Likely scam",d.scam,"var(--red)"],["Likely genuine",d.genuine,"var(--grn)"],["Not sure",d.notsure,"var(--amb)"]])}</div>
+ <div class="card"><b>Scam categories</b>${d.cats.length?d.cats.map(c=>`<p style="margin:8px 0 2px">${esc(c.cat)}: ${c.n}</p><div class="bar"><i style="width:${c.n/d.cats[0].n*100}%;background:var(--blue)"></i></div>`).join(""):'<p class="mut">No likely scams detected yet.</p>'}</div>
+ <div class="card"><b>Activity</b>${line(d.activity)}</div></div>
+ <h2>Recent activity</h2>${tbl(d.recent)}
+ <h2>Community alerts</h2>${d.community.length?d.community.map(c=>`<div class="card">${c.alert?ALERT:""}Sender ${esc(c.sender)} · <b>${c.count}</b> eligible report${c.count==1?"":"s"} · ${esc(c.cat)} · Status: ${esc(c.status)} <button class="btn alt" onclick="go('saved')">View report details</button></div>`).join(""):'<div class="card">You haven\'t reported any senders. Reports from several different users are needed before a community alert appears.</div>'}`},
+check:()=>`<h1 style="font-size:30px">Analyze a message</h1><div class="card"><div class="drop" id="drop" tabindex="0" role="button" onclick="$('#file').click()" onkeydown="if(event.key==='Enter')$('#file').click()">Click to upload a screenshot (PNG, JPG, max 5 MB)<div id="prev"></div></div>
+<input type="file" id="file" accept="image/png,image/jpeg" class="hide" aria-label="Screenshot file"><div class="row" id="rm"></div><p id="ocr" class="mut" aria-live="polite"></p>
+<label for="msg">Message text <span class="mut">(edit it if the screenshot reading is wrong)</span></label><textarea id="msg" rows="6" placeholder="Paste the message here"></textarea>
+<label for="snd">Sender phone number (optional)</label><input type="text" id="snd" placeholder="+91 98765 43210"><p class="row"><button class="btn" id="go">Analyze</button><button class="btn alt" onclick="go('check')">Clear</button></p></div><div id="out"></div>`,
+history:async()=>{const d=await api("GET","/analyses?page="+PAGE+"&size=8");if(PAGE>d.pages){PAGE=d.pages;return P.history()}
+ return`<h1 style="font-size:30px">Analysis history</h1>${tbl(d.rows)}${d.total?`<div class="row" style="margin-top:10px"><button class="btn alt" ${PAGE<2?"disabled":""} onclick="PAGE--;go('history',false)">Previous</button><span class="mut">Page ${PAGE} of ${d.pages} · ${d.total} total</span><button class="btn alt" ${PAGE>=d.pages?"disabled":""} onclick="PAGE++;go('history',false)">Next</button></div>`:""}`},
+result:async()=>{if(!CUR)return`<div class="card">Choose an analysis from your history. <button class="btn alt" onclick="go('history')">Open history</button></div>`;const d=await api("GET","/analyses/"+CUR);
+ return`<button class="btn alt" onclick="go('history')">Back to history</button><h1 style="font-size:30px">Analysis details</h1><p class="mut">Checked ${dt(d.at)} · ${esc(d.kind)}</p>${resultHtml(d.result,false)}<div class="card"><b>Message (long numbers masked)</b><p>${esc(d.text||"Not saved (see your history settings).")}</p></div>`},
+community:()=>`<h1 style="font-size:30px">Community scam reports</h1><p class="mut">Report a sender or look up how many different users reported them. Reports are not proof of guilt.</p><div class="card">
+<label for="cs">Sender phone number</label><input type="text" id="cs" placeholder="+91 98765 43210"><label for="cc">Suspected scam type</label><select id="cc">${Object.keys(CATS).concat("Unknown / Insufficient Evidence").map(c=>`<option>${esc(c)}</option>`).join("")}</select>
+<p><button class="btn" id="look">Look up or report</button></p><div id="cm"></div></div>`,
+saved:async()=>{const d=await api("GET","/reports");return`<h1 style="font-size:30px">Saved reports</h1>${d.rows.length?d.rows.map(r=>`<div class="card"><b>Sender ••••••${esc(r.sender.slice(-4))}</b> · ${esc(r.cat)} · Status: ${esc(r.status)}<br><span class="mut">Reported ${dt(r.at)}</span><p><button class="btn alt" onclick="wdr(${+r.id})">Withdraw report</button></p></div>`).join(""):'<div class="card">You haven\'t reported anyone yet. Use Community Scam Reports to add one.</div>'}`},
+profile:()=>`<h1 style="font-size:30px">Profile</h1><div class="card"><form id="pf"><label for="pn">Full name</label><input id="pn" type="text" value="${esc(U.name)}"><label for="pe">Email (cannot be changed)</label><input id="pe" type="text" value="${esc(U.email)}" readonly><p class="err" id="e" role="alert"></p><button class="btn" data-l="Save name">Save name</button></form></div>
+<div class="card"><h2 style="margin-top:0">Change password</h2><form id="cp">${pwField("cur","Current password","current-password")}${pwField("nw","New password","new-password")}<p class="err" id="e2" role="alert"></p><button class="btn" data-l="Change password">Change password</button></form></div>
+<div class="card"><h2 style="margin-top:0">Delete account</h2><p class="mut">Permanently deletes your account, history and reports.</p><form id="da">${pwField("dp","Confirm with your password","current-password")}<p class="err" id="e3" role="alert"></p><button class="btn alt" style="border-color:var(--red);color:var(--red)" data-l="Delete my account">Delete my account</button></form></div>`,
+settings:()=>`<h1 style="font-size:30px">Settings</h1><div class="card"><h2 style="margin-top:0">Privacy and history</h2><label class="inl"><input type="checkbox" id="st" ${U.save_text?"checked":""}> Save the (masked) message text with each analysis</label><p class="mut">When off, only the result is saved.</p><button class="btn alt" id="dh">Delete all my analysis history</button></div>
+<div class="card"><h2 style="margin-top:0">Account security</h2><ul><li>Passwords are stored as salted scrypt hashes, never in plain text.</li><li>Your login lives in an HttpOnly cookie that scripts cannot read.</li><li>Sessions last 12 hours, or 30 days with Remember me.</li><li>Changing your password signs out your other devices.</li></ul></div><button class="btn alt" onclick="logout()">Log out</button>`,
+about:()=>`<h1 style="font-size:30px">Limits and honesty</h1><div class="card"><ul><li>This is an <b>untrained rule-based baseline</b>. It has no measured accuracy.</li><li>The trust score is a simple risk-to-trust conversion, <b>not</b> a probability. It never proves a message is safe.</li><li>Links are <b>not opened or reputation-checked</b>.</li><li>Reports never prove someone is a scammer.</li></ul></div>`};
+async function wdr(id){try{await api("DELETE","/reports?id="+id);toast("Report withdrawn.");go("saved",false)}catch(e){toast(e.message,1)}}
+const W={
+login:()=>{wireSh();$("#f").onsubmit=e=>{e.preventDefault();const em=$("#em").value.trim(),pw=$("#pw").value;
+ if(!EM.test(em))return $("#e").textContent="Enter a valid email address.";if(!pw)return $("#e").textContent="Enter your password.";$("#e").textContent="";
+ submit($("#sub"),"Logging in…",async()=>{U=(await api("POST","/login",{email:em,password:pw,remember:$("#rm").checked})).user;go("dashboard")})}},
+register:()=>{wireSh();$("#pw").oninput=e=>{const s=strength(e.target.value);$("#sb").style.cssText=`width:${s*25}%;background:${["var(--red)","var(--red)","var(--amb)","var(--grn)","var(--grn)"][s]}`;$("#sl").textContent=e.target.value?["Too weak","Weak","Fair","Good","Strong"][s]:"Use 8+ characters with a letter and a number."};
+ $("#f").onsubmit=e=>{e.preventDefault();const n=$("#nm").value.trim(),em=$("#em").value.trim(),pw=$("#pw").value,x=$("#e");
+ const bad=!n?"Enter your full name.":!EM.test(em)?"Enter a valid email address.":pwBad(pw)||(pw!==$("#pw2").value?"Passwords do not match.":"")||(!$("#tc").checked?"Accept the Terms and Privacy Policy to continue.":"");
+ if(bad)return x.textContent=bad;x.textContent="";submit($("#sub"),"Creating account…",async()=>{U=(await api("POST","/register",{name:n,email:em,password:pw,terms:true})).user;toast("Account created. Welcome!");go("dashboard")})}},
+community:()=>{$("#look").onclick=()=>commBox(normPhone($("#cs").value),$("#cc").value).catch(e=>toast(e.message,1))},
+profile:()=>{wireSh();$("#pf").onsubmit=e=>{e.preventDefault();const n=$("#pn").value.trim();if(!n)return $("#e").textContent="Enter your name.";$("#e").textContent="";submit(e.submitter,"Saving…",async()=>{U=(await api("PATCH","/me",{name:n})).user;side.innerHTML=sideHtml("profile");toast("Name updated.")})};
+ $("#cp").onsubmit=e=>{e.preventDefault();const x=$("#e2"),n=$("#nw").value;if(pwBad(n))return x.textContent=pwBad(n);x.textContent="";submit(e.submitter,"Saving…",async()=>{try{await api("POST","/password",{current:$("#cur").value,new:n});toast("Password changed. Other devices were signed out.");$("#cur").value=$("#nw").value=""}catch(er){x.textContent=er.message}})};
+ $("#da").onsubmit=e=>{e.preventDefault();if(!confirm("Delete your account and all data? This cannot be undone."))return;submit(e.submitter,"Deleting…",async()=>{try{await api("DELETE","/me",{password:$("#dp").value});U=null;toast("Account deleted.");go("home")}catch(er){$("#e3").textContent=er.message}})}},
+settings:()=>{$("#st").onchange=async e=>{try{U=(await api("PATCH","/me",{save_text:e.target.checked})).user;toast("Preference saved.")}catch(er){toast(er.message,1)}};
+ $("#dh").onclick=async()=>{if(confirm("Delete all analysis history?"))try{await api("DELETE","/analyses");toast("History deleted.")}catch(e){toast(e.message,1)}}},
+check:()=>{if(MODE==="shot")$("#drop").focus();if(MODE==="link"){$("#msg").placeholder="Paste the suspicious link here";$("#msg").focus()}MODE="";IMG=null;
+ $("#file").onchange=async e=>{const f=e.target.files[0];if(!f)return;if(!/^image\/(png|jpe?g)$/.test(f.type)||f.size>5e6){$("#ocr").textContent="Use a PNG or JPG under 5 MB.";return}
+  IMG=URL.createObjectURL(f);$("#prev").innerHTML=`<img src="${IMG}" alt="Screenshot preview">`;$("#rm").innerHTML=`<button class="btn alt" id="rmb">Remove image</button>`;
+  $("#rmb").onclick=()=>{IMG=null;$("#prev").innerHTML="";$("#rm").innerHTML="";$("#ocr").textContent="";$("#file").value=""};$("#ocr").textContent="Reading text from the image… (first time can take a minute)";
+  try{await loadOCR();const r=await Tesseract.recognize(f,"eng");$("#msg").value=r.data.text.trim();$("#ocr").textContent=r.data.text.trim().length<CFG.minChars?"We could not read enough text. Type the message below.":"Text read. Please check it and fix any mistakes."}
+  catch{$("#ocr").textContent="Screenshot reading is unavailable (needs internet). Type or paste the message instead."}};
+ $("#go").onclick=()=>{const text=$("#msg").value,a=analyze(text),sender=normPhone($("#snd").value);$("#go").dataset.l="Analyze";
+  submit($("#go"),"Analyzing…",async()=>{await api("POST","/analyses",{kind:IMG?"Screenshot":"Text",text:redact(text),result:a});$("#out").innerHTML=resultHtml(a,true);await commBox(sender,a.cat);toast("Analysis saved to your history.")})}}};
+const loadOCR=()=>ocrP||(ocrP=new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";s.onload=ok;s.onerror=()=>{ocrP=null;no()};document.head.appendChild(s)}));
+function route(push){const m=location.pathname.match(/^\/(\w+)(?:\/(\d+))?/);go(m?m[1]:"home",push,m&&m[2]?+m[2]:0)}
+window.addEventListener("popstate",()=>route(false));
+(async()=>{try{U=(await api("GET","/me")).user}catch{}route(false)})();
+</script></body></html>
